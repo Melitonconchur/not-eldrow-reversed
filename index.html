@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mini Wordle</title>
+  <title>Daily Wordle Clone</title>
   <style>
     body {
       font-family: sans-serif;
@@ -56,14 +56,26 @@
   </style>
 </head>
 <body>
-  <h1>Mini Wordle</h1>
+  <h1>Daily Wordle Clone</h1>
   <div id="board"></div>
   <input type="text" id="guessInput" maxlength="5" placeholder="Guess word" />
   <div id="message"></div>
 
   <script>
-    const wordList = ["apple", "grape", "crane", "blush", "brisk", "drive", "flame"];
-    const targetWord = wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
+    let targetWord = "";
+
+    // Fetch today's Wordle answer from a public API (Community-driven)
+    fetch("https://api.wordle.com/api/today")
+      .then(response => response.json())
+      .then(data => {
+        targetWord = data.word.toUpperCase(); // Fetch the Wordle answer
+        console.log("Today's Wordle answer is: " + targetWord);  // For debugging
+      })
+      .catch(err => {
+        console.error("Failed to fetch Wordle answer", err);
+        targetWord = "PLACEHOLDER"; // Fallback answer
+      });
+
     const board = document.getElementById('board');
     const input = document.getElementById('guessInput');
     const message = document.getElementById('message');
@@ -82,7 +94,7 @@
     }
 
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && targetWord) {
         const guess = input.value.toUpperCase();
         if (guess.length !== 5) {
           alert("Please enter a 5-letter word.");
