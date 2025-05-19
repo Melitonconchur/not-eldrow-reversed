@@ -3,97 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wordle Answer Guess</title>
+  <title>Wordle Answer Checker</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 50px;
-    }
-    input[type="text"] {
-      text-transform: uppercase;
-      width: 100px;
-      font-size: 24px;
-      padding: 10px;
-      margin: 20px;
-      border: 2px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background-color: #4CAF50;
-      color: white;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .correct {
-      color: green;
-    }
-    .incorrect {
-      color: red;
-    }
+    body { font-family: Arial, sans-serif; padding: 2em; }
+    input, button { padding: 0.5em; font-size: 1em; }
+    #result { margin-top: 1em; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>Guess Today's Wordle Answer</h1>
-  <p>Enter your 5-letter guess:</p>
-  <input type="text" id="guessInput" maxlength="5" placeholder="Enter guess"/>
-  <button onclick="checkGuess()">Submit Guess</button>
-  <div id="result" class="result"></div>
+  <h1>Check Today's Wordle Answer</h1>
+
+  <input type="text" id="guess" maxlength="5" placeholder="Enter 5-letter word" />
+  <button onclick="submitGuess()">Submit Guess</button>
+
+  <div id="result">Starting session...</div>
 
   <script>
-    let correctAnswer = '';
+    let sessionCode = null;
 
-    function getTodayDateString() {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+    // Start a new Wordle session
+    async function startSession() {
+      const res = await fetch('https://wordle-api.otech.id/api/session');
+      const data = await res.json();
+      sessionCode = data.sessionCode;
+      document.getElementById('result').textContent = "Session started. Enter your guess!";
     }
 
-    // Construct the dynamic API URL
-    const apiDate = getTodayDateString();
-    const apiUrl = `https://www.nytimes.com/svc/wordle/v2/${apiDate}.json`;
+    // Submit guess to the API
+    async function submitGuess() {
+      const guessInput = document.getElementById('guess');
+      const guess = guessInput.value.trim().toLowerCase();
 
-    fetch(apiUrl)
-      .then(response => {
-        if (!response.ok) throw new Error('API error');
-        return response.json();
-      })
-      .then(data => {
-        correctAnswer = data.solution.toUpperCase();
-      })
-      .catch(error => {
-        console.error('Error fetching Wordle answer:', error);
-        document.getElementById('result').innerText = 'Failed to fetch today\'s Wordle answer.';
-      });
-
-    function checkGuess() {
-      const userGuess = document.getElementById('guessInput').value.toUpperCase();
-      const result = document.getElementById('result');
-      if (!correctAnswer) {
-        result.innerText = 'Still loading the answer...';
+      if (guess.length !== 5) {
+        alert("Please enter a 5-letter word.");
         return;
       }
-      if (userGuess === correctAnswer) {
-        result.innerText = 'Correct!';
-        result.className = 'result correct';
+
+      const body = {
+        session: sessionCode,
+        guessed: guess.split('')
+      };
+
+      const res = await fetch('https://wordle-api.otech.id/api/guessed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (data.resCode === "OK") {
+        document.getElementById('result').textContent = data.message;
       } else {
-        result.innerText = `Incorrect! The correct answer was ${correctAnswer}`;
-        result.className = 'result incorrect';
+        document.getElementById('result').textContent = "Error: " + data.message;
       }
     }
+
+    // Start the session when the page loads
+    startSession();
   </script>
 </body>
 </html>
