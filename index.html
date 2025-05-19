@@ -8,7 +8,7 @@
     body { font-family: Arial, sans-serif; padding: 2em; }
     input, button { padding: 0.5em; font-size: 1em; }
     #result { margin-top: 1em; font-weight: bold; }
-    .correct { color: green; }
+    .correct { color: teal; }
     .incorrect { color: red; }
   </style>
 </head>
@@ -40,7 +40,7 @@
       attempts++;
 
       if (guess === wordOfTheDay) {
-        document.getElementById('result').textContent style="background-color:red;" = `Code: H79`;
+        document.getElementById('result').textContent  = `Code: H79`;
         document.getElementById('result').className = 'correct';
       } else {
         document.getElementById('result').textContent = `Incorrect guess. Try again!`;
