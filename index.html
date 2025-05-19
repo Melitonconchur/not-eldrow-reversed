@@ -3,144 +3,97 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title> Wordle answer </title>
+  <title>Wordle Answer Guess</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #121213;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 30px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
     }
-    h1 {
-      margin-bottom: 20px;
-    }
-    #board {
-      display: grid;
-      grid-template-rows: repeat(6, 1fr);
-      gap: 10px;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: repeat(5, 60px);
-      gap: 5px;
-    }
-    .tile {
-      width: 60px;
-      height: 60px;
-      border: 2px solid #3a3a3c;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    input[type="text"] {
+      text-transform: uppercase;
+      width: 100px;
       font-size: 24px;
-      text-transform: uppercase;
-      font-weight: bold;
-      background-color: #121213;
-    }
-    .green { background-color: #538d4e; }
-    .yellow { background-color: #b59f3b; }
-    .gray { background-color: #3a3a3c; }
-    input {
-      margin-top: 20px;
       padding: 10px;
-      font-size: 18px;
-      width: 150px;
-      text-transform: uppercase;
+      margin: 20px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
     }
-    #message {
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .correct {
+      color: green;
+    }
+    .incorrect {
+      color: red;
     }
   </style>
 </head>
 <body>
-  <h1> wordle </h1>
-  <div id="board"></div>
-  <input type="text" id="guessInput" maxlength="5" placeholder="Wordle answer" />
-  <div id="message"></div>
+  <h1>Guess Today's Wordle Answer</h1>
+  <p>Enter your 5-letter guess:</p>
+  <input type="text" id="guessInput" maxlength="5" placeholder="Enter guess"/>
+  <button onclick="checkGuess()">Submit Guess</button>
+  <div id="result" class="result"></div>
 
   <script>
-    let targetWord = "";
+    let correctAnswer = '';
 
-    // Fetch today's Wordle answer from a public API (Community-driven)
-    fetch("https://api.wordle.com/api/today")
-      .then(response => response.json())
-      .then(data => {
-        targetWord = data.word.toUpperCase(); // Fetch the Wordle answer
-        console.log("Today's Wordle answer is: " + targetWord);  // For debugging
-      })
-      .catch(err => {
-        console.error("Failed to fetch Wordle answer", err);
-        targetWord = "PLACEHOLDER"; // Fallback answer
-      });
-
-    const board = document.getElementById('board');
-    const input = document.getElementById('guessInput');
-    const message = document.getElementById('message');
-
-    let currentRow = 0;
-
-    for (let i = 0; i < 6; i++) {
-      const row = document.createElement('div');
-      row.className = 'row';
-      for (let j = 0; j < 5; j++) {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        row.appendChild(tile);
-      }
-      board.appendChild(row);
+    function getTodayDateString() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     }
 
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && targetWord) {
-        const guess = input.value.toUpperCase();
-        if (guess.length !== 5) {
-          alert("Please enter a 5-letter word.");
-          return;
-        }
-        if (currentRow >= 6) return;
+    // Construct the dynamic API URL
+    const apiDate = getTodayDateString();
+    const apiUrl = `https://www.nytimes.com/svc/wordle/v2/${apiDate}.json`;
 
-        const rowTiles = board.children[currentRow].children;
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('API error');
+        return response.json();
+      })
+      .then(data => {
+        correctAnswer = data.solution.toUpperCase();
+      })
+      .catch(error => {
+        console.error('Error fetching Wordle answer:', error);
+        document.getElementById('result').innerText = 'Failed to fetch today\'s Wordle answer.';
+      });
 
-        const letterCount = {};
-        for (let char of targetWord) {
-          letterCount[char] = (letterCount[char] || 0) + 1;
-        }
-
-        for (let i = 0; i < 5; i++) {
-          const tile = rowTiles[i];
-          tile.textContent = guess[i];
-          if (guess[i] === targetWord[i]) {
-            tile.classList.add('green');
-            letterCount[guess[i]]--;
-          }
-        }
-
-        for (let i = 0; i < 5; i++) {
-          const tile = rowTiles[i];
-          if (tile.classList.contains('green')) continue;
-          if (targetWord.includes(guess[i]) && letterCount[guess[i]] > 0) {
-            tile.classList.add('yellow');
-            letterCount[guess[i]]--;
-          } else {
-            tile.classList.add('gray');
-          }
-        }
-
-        if (guess === targetWord) {
-          message.textContent = "🎉 You guessed it!";
-          input.disabled = true;
-        } else if (currentRow === 5) {
-          message.textContent = `💥 Out of tries! The word was ${targetWord}.`;
-          input.disabled = true;
-        }
-
-        currentRow++;
-        input.value = "";
+    function checkGuess() {
+      const userGuess = document.getElementById('guessInput').value.toUpperCase();
+      const result = document.getElementById('result');
+      if (!correctAnswer) {
+        result.innerText = 'Still loading the answer...';
+        return;
       }
-    });
+      if (userGuess === correctAnswer) {
+        result.innerText = 'Correct!';
+        result.className = 'result correct';
+      } else {
+        result.innerText = `Incorrect! The correct answer was ${correctAnswer}`;
+        result.className = 'result incorrect';
+      }
+    }
   </script>
 </body>
 </html>
