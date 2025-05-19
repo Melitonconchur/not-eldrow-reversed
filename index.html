@@ -3,67 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wordle time</title>
+  <title>Wordle seeker</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 2em; }
     input, button { padding: 0.5em; font-size: 1em; }
     #result { margin-top: 1em; font-weight: bold; }
+    .correct { color: green; }
+    .incorrect { color: red; }
   </style>
 </head>
 <body>
-  <h1>Check Today's Wordle Answer</h1>
+  <h1>Gimme the wordle answer</h1>
 
+  <p>Enter your guess (5-letter word):</p>
   <input type="text" id="guess" maxlength="5" placeholder="Enter 5-letter word" />
   <button onclick="submitGuess()">Submit Guess</button>
 
-  <div id="result">Starting session...</div>
+  <div id="result">Guess the word!</div>
 
   <script>
-    let continuationToken = null;
+    // ________________________________________________________________________________________________________________________________________
+    const wordOfTheDay = "pitch";  
+    let attempts = 0;
 
-    // Start a new Wordle session
-    async function startSession() {
-      try {
-        const res = await fetch('https://api.infinitewords.uk/api/guess/hello');
-        const data = await res.json();
-        continuationToken = data.continuationToken;
-        document.getElementById('result').textContent = "Session started. Enter your guess!";
-      } catch (error) {
-        document.getElementById('result').textContent = "Error starting session.";
-      }
-    }
-
-    // Submit guess to the API
-    async function submitGuess() {
+    // Function to check the guess
+    function submitGuess() {
       const guessInput = document.getElementById('guess');
       const guess = guessInput.value.trim().toLowerCase();
 
+      // Validate the guess length
       if (guess.length !== 5) {
         alert("Please enter a 5-letter word.");
         return;
       }
 
-      if (!continuationToken) {
-        alert("Session not started. Please try again later.");
-        return;
+      attempts++;
+
+      if (guess === wordOfTheDay) {
+        document.getElementById('result').textContent = `Congratulations! You've guessed the word in ${attempts} attempts.`;
+        document.getElementById('result').className = 'correct';
+      } else {
+        document.getElementById('result').textContent = `Incorrect guess. Try again! Attempt ${attempts}`;
+        document.getElementById('result').className = 'incorrect';
       }
 
-      const url = `https://api.infinitewords.uk/api/guess/${guess}/${continuationToken}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.validGuess) {
-          document.getElementById('result').textContent = `Correct word: ${data.correctWord}`;
-        } else {
-          document.getElementById('result').textContent = `Incorrect guess. Try again!`;
-        }
-      } catch (error) {
-        document.getElementById('result').textContent = "Error submitting guess.";
-      }
+      // Reset the input field for the next guess
+      guessInput.value = "";
     }
-
-    // Start the session when the page loads
-    startSession();
   </script>
 </body>
 </html>
