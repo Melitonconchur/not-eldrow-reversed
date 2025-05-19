@@ -23,10 +23,19 @@
 
     // Start a new Wordle session
     async function startSession() {
-      const res = await fetch('https://wordle-api.otech.id/api/session');
-      const data = await res.json();
-      sessionCode = data.sessionCode;
-      document.getElementById('result').textContent = "Session started. Enter your guess!";
+      try {
+        const res = await fetch('https://wordle-api.otech.id/api/session');
+        if (!res.ok) throw new Error('Failed to start session');
+        const data = await res.json();
+        if (data.sessionCode) {
+          sessionCode = data.sessionCode;
+          document.getElementById('result').textContent = "Session started. Enter your guess!";
+        } else {
+          throw new Error('No session code returned');
+        }
+      } catch (error) {
+        document.getElementById('result').textContent = `Error: ${error.message}`;
+      }
     }
 
     // Submit guess to the API
@@ -39,23 +48,31 @@
         return;
       }
 
+      if (!sessionCode) {
+        alert("Session not started. Please try again later.");
+        return;
+      }
+
       const body = {
         session: sessionCode,
         guessed: guess.split('')
       };
 
-      const res = await fetch('https://wordle-api.otech.id/api/guessed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data = await res.json();
-
-      if (data.resCode === "OK") {
-        document.getElementById('result').textContent = data.message;
-      } else {
-        document.getElementById('result').textContent = "Error: " + data.message;
+      try {
+        const res = await fetch('https://wordle-api.otech.id/api/guessed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('Failed to submit guess');
+        const data = await res.json();
+        if (data.resCode === "OK") {
+          document.getElementById('result').textContent = data.message;
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (error) {
+        document.getElementById('result').textContent = `Error: ${error.message}`;
       }
     }
 
