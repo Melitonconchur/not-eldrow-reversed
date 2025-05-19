@@ -19,22 +19,17 @@
   <div id="result">Starting session...</div>
 
   <script>
-    let sessionCode = null;
+    let continuationToken = null;
 
     // Start a new Wordle session
     async function startSession() {
       try {
-        const res = await fetch('https://wordle-api.otech.id/api/session');
-        if (!res.ok) throw new Error('Failed to start session');
+        const res = await fetch('https://api.infinitewords.uk/api/guess/hello');
         const data = await res.json();
-        if (data.sessionCode) {
-          sessionCode = data.sessionCode;
-          document.getElementById('result').textContent = "Session started. Enter your guess!";
-        } else {
-          throw new Error('No session code returned');
-        }
+        continuationToken = data.continuationToken;
+        document.getElementById('result').textContent = "Session started. Enter your guess!";
       } catch (error) {
-        document.getElementById('result').textContent = `Error: ${error.message}`;
+        document.getElementById('result').textContent = "Error starting session.";
       }
     }
 
@@ -48,31 +43,22 @@
         return;
       }
 
-      if (!sessionCode) {
+      if (!continuationToken) {
         alert("Session not started. Please try again later.");
         return;
       }
 
-      const body = {
-        session: sessionCode,
-        guessed: guess.split('')
-      };
-
+      const url = `https://api.infinitewords.uk/api/guess/${guess}/${continuationToken}`;
       try {
-        const res = await fetch('https://wordle-api.otech.id/api/guessed', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) throw new Error('Failed to submit guess');
+        const res = await fetch(url);
         const data = await res.json();
-        if (data.resCode === "OK") {
-          document.getElementById('result').textContent = data.message;
+        if (data.validGuess) {
+          document.getElementById('result').textContent = `Correct word: ${data.correctWord}`;
         } else {
-          throw new Error(data.message);
+          document.getElementById('result').textContent = `Incorrect guess. Try again!`;
         }
       } catch (error) {
-        document.getElementById('result').textContent = `Error: ${error.message}`;
+        document.getElementById('result').textContent = "Error submitting guess.";
       }
     }
 
